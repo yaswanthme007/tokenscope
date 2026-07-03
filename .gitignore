@@ -1,3 +1,6 @@
 node_modules/
 tokenscope-report.html
 *.log
+report.html 
+real-report.html 
+real-report-*.html 

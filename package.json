@@ -6,13 +6,22 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["ai", "token", "profiler", "claude", "llm", "context-window", "cli"],
+  "author": "yaswanthme007",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "tokenscope": "./src/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yaswanthme007/tokenscope"
+  },
+  "files": [
+    "src/**",
+    "fixtures/**",
+    "README.md"
+  ],
   "dependencies": {
     "js-tiktoken": "^1.0.21"
   }
