@@ -4,7 +4,7 @@
 
 import { writeFileSync } from "node:fs";
 
-export function writeHtmlReport(session, analysis, outPath) {
+export function writeHtmlReport(session, analysis, outPath, cost) {
   const data = {
     source: session.source,
     adapter: session.adapter,
@@ -13,6 +13,13 @@ export function writeHtmlReport(session, analysis, outPath) {
     breakdown: analysis.breakdown,
     findings: analysis.findings,
     wasted: analysis.wastedTokens,
+    cost: cost ? {
+      label: cost.label,
+      inputPer1M: cost.inputPer1M,
+      outputPer1M: cost.outputPer1M,
+      sessionCost: cost.sessionCost,
+      wastedCost: cost.wastedCost,
+    } : null,
     blocks: session.messages.flatMap((m) =>
       m.blocks.map((b) => ({ msg: m.index, role: m.role, kind: b.kind, label: b.label, tokens: b.tokens }))
     ).filter((b) => b.tokens > 0),
@@ -41,7 +48,10 @@ export function writeHtmlReport(session, analysis, outPath) {
   .stats { display: flex; gap: 32px; margin: 24px 0; flex-wrap: wrap; }
   .stat b { display: block; font-size: 28px; font-weight: 600; }
   .stat.waste b { color: var(--heat3); }
+  .stat.cost-session b { color: var(--accent); }
+  .stat.cost-waste b { color: var(--heat3); }
   .stat small { color: var(--muted); font-size: 12px; text-transform: lowercase; }
+  .stat .model-note { color: var(--muted); font-size: 11px; display: block; }
   h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin: 36px 0 12px; }
   #treemap { width: 100%; height: 380px; position: relative; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
   .cell { position: absolute; overflow: hidden; padding: 6px 8px; font-size: 11px; line-height: 1.35; border: 1px solid rgba(0,0,0,.35); color: #0e1215; }
@@ -67,23 +77,39 @@ export function writeHtmlReport(session, analysis, outPath) {
     <div class="stat"><b id="total"></b><small>total tokens</small></div>
     <div class="stat"><b id="msgs"></b><small>messages</small></div>
     <div class="stat waste"><b id="wasted"></b><small>est. tokens wasted</small></div>
+    <div class="stat cost-session" id="stat-cost-session" style="display:none"><b id="session-cost"></b><small>est. session cost</small><span class="model-note" id="model-note"></span></div>
+    <div class="stat cost-waste" id="stat-cost-waste" style="display:none"><b id="waste-cost"></b><small>est. waste cost</small></div>
   </div>
   <h2>Context treemap — every block, sized by tokens</h2>
   <div id="treemap"></div>
   <div class="legend" id="legend"></div>
   <h2>Findings</h2>
   <div id="findings"></div>
-  <footer>Generated locally by tokenscope · nothing left your machine · token counts are estimates (o200k tokenizer)</footer>
+  <footer>Generated locally by tokenscope-ai · nothing left your machine · token counts and cost are estimates (o200k tokenizer)</footer>
 </main>
 <script>
 const DATA = ${JSON.stringify(data)};
 const KIND_COLOR = { system: "#8fa8c9", user_text: "#7fc9b4", assistant_text: "#c9c07f", tool_use: "#c99a7f", tool_result: "#d4713f", attachment: "#b07fc9", other: "#8a949e" };
 const KIND_NAME = { system: "system", user_text: "user", assistant_text: "assistant", tool_use: "tool calls", tool_result: "tool results", attachment: "attachments", other: "other" };
 
+function fmtCost(n) {
+  if (n >= 1)      return "$" + n.toFixed(2);
+  if (n >= 0.0001) return "$" + n.toFixed(4);
+  return "<$0.0001";
+}
+
 document.getElementById("src").textContent = DATA.adapter + " · " + DATA.source;
 document.getElementById("total").textContent = DATA.total.toLocaleString();
 document.getElementById("msgs").textContent = DATA.messages;
 document.getElementById("wasted").textContent = "~" + DATA.wasted.toLocaleString();
+
+if (DATA.cost) {
+  document.getElementById("stat-cost-session").style.display = "";
+  document.getElementById("stat-cost-waste").style.display = "";
+  document.getElementById("session-cost").textContent = "~" + fmtCost(DATA.cost.sessionCost);
+  document.getElementById("waste-cost").textContent = "~" + fmtCost(DATA.cost.wastedCost);
+  document.getElementById("model-note").textContent = DATA.cost.label + " · $" + DATA.cost.inputPer1M.toFixed(2) + "/$" + DATA.cost.outputPer1M.toFixed(2) + "/M";
+}
 
 // Squarified treemap (Bruls et al.) — dependency-free.
 function squarify(items, x, y, w, h, out) {
@@ -149,7 +175,7 @@ for (const row of DATA.breakdown) {
 
 const fEl = document.getElementById("findings");
 if (!DATA.findings.length) {
-  fEl.innerHTML = '<p class="clean">✓ No waste detected. Clean session.</p>';
+  fEl.innerHTML = '<p class="clean">No waste detected. Clean session.</p>';
 } else {
   for (const f of DATA.findings) {
     const d = document.createElement("div");
