@@ -1,3 +1,5 @@
+[![npm version](https://img.shields.io/npm/v/tokenscope-ai.svg)](https://www.npmjs.com/package/tokenscope-ai)
+
 # tokenscope
 
 **Chrome DevTools for your context window.** See exactly where your AI tokens go — and stop wasting them.
@@ -7,7 +9,7 @@
 Your agent session just burned 500K tokens. Where did they go? tokenscope profiles your session logs and tells you: which files got re-sent six times, which tool result dumped 20K tokens of JSON the model never used, and what it's costing you.
 
 ```
-npx tokenscope ~/.claude/projects/my-project
+npx tokenscope-ai ~/.claude/projects/my-project
 ```
 
 ```
@@ -39,16 +41,16 @@ Findings
 ## Install
 
 ```bash
-npx tokenscope <session.jsonl>        # zero-install
-npm install -g tokenscope             # or install globally
+npx tokenscope-ai <session.jsonl>        # zero-install
+npm install -g tokenscope-ai            # or install globally
 ```
 
 ## Usage
 
 ```bash
-tokenscope ~/.claude/projects/my-project        # newest session in a directory
-tokenscope session.jsonl                        # a specific session file
-tokenscope session.jsonl --html report.html    # + shareable HTML treemap report
+tokenscope-ai ~/.claude/projects/my-project        # newest session in a directory
+tokenscope-ai session.jsonl                        # a specific session file
+tokenscope-ai session.jsonl --html report.html    # + shareable HTML treemap report
 ```
 
 The HTML report is a single self-contained file — open it in any browser, share it with your team, attach it to a PR.
