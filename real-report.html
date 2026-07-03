@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tokenscope report</title>
+<style>
+  :root {
+    --bg: #101418; --panel: #171d23; --line: #232c34;
+    --text: #d7dde3; --muted: #7d8a96;
+    --heat0: #2a5d8f; --heat1: #3f8f7a; --heat2: #c9a227; --heat3: #d4622a; --heat4: #c22f2f;
+    --accent: #e8b23a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.6 "SF Mono", "Cascadia Code", Consolas, monospace; padding: 40px 24px 80px; }
+  main { max-width: 960px; margin: 0 auto; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: .02em; }
+  h1 span { color: var(--accent); }
+  .src { color: var(--muted); font-size: 12px; margin-top: 4px; word-break: break-all; }
+  .stats { display: flex; gap: 32px; margin: 24px 0; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 28px; font-weight: 600; }
+  .stat.waste b { color: var(--heat3); }
+  .stat small { color: var(--muted); font-size: 12px; text-transform: lowercase; }
+  h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin: 36px 0 12px; }
+  #treemap { width: 100%; height: 380px; position: relative; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+  .cell { position: absolute; overflow: hidden; padding: 6px 8px; font-size: 11px; line-height: 1.35; border: 1px solid rgba(0,0,0,.35); color: #0e1215; }
+  .cell b { display: block; font-weight: 600; }
+  .legend { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+  .finding { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--heat3); border-radius: 0; padding: 14px 16px; margin-bottom: 12px; }
+  .finding .code { color: var(--accent); font-weight: 600; margin-right: 10px; }
+  .finding .waste { float: right; color: var(--heat3); font-weight: 600; }
+  .finding p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .finding .fix { color: var(--heat1); }
+  .clean { color: var(--heat1); }
+  footer { margin-top: 48px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>token<span>scope</span></h1>
+    <div class="src" id="src"></div>
+  </header>
+  <div class="stats">
+    <div class="stat"><b id="total"></b><small>total tokens</small></div>
+    <div class="stat"><b id="msgs"></b><small>messages</small></div>
+    <div class="stat waste"><b id="wasted"></b><small>est. tokens wasted</small></div>
+  </div>
+  <h2>Context treemap — every block, sized by tokens</h2>
+  <div id="treemap"></div>
+  <div class="legend" id="legend"></div>
+  <h2>Findings</h2>
+  <div id="findings"></div>
+  <footer>Generated locally by tokenscope · nothing left your machine · token counts are estimates (o200k tokenizer)</footer>
+</main>
+<script>
+const DATA = {"source":"C:\\Users\\kbyas\\.claude\\projects\\C--projects-resume-reado\\16232aaf-6942-4844-89f1-296f48dc33af.jsonl","adapter":"claude-code","total":32250,"messages":226,"breakdown":[{"kind":"tool_result","label":"Tool results","tokens":15295,"pct":47.42635658914729},{"kind":"tool_use","label":"Tool calls","tokens":12508,"pct":38.78449612403101},{"kind":"assistant_text","label":"Assistant output","tokens":3713,"pct":11.513178294573644},{"kind":"user_text","label":"User messages","tokens":660,"pct":2.0465116279069764},{"kind":"system","label":"System prompt","tokens":74,"pct":0.22945736434108527}],"findings":[{"code":"W002","severity":"warn","title":"Bloated tool result","detail":"A single tool result at message #7 is 4,681 tokens (14.5% of the whole session).","wastedTokens":3277,"fix":"Truncate, filter fields, or summarize the tool output before it enters context (e.g. return only the fields the model needs)."},{"code":"W002","severity":"warn","title":"Bloated tool result","detail":"A single tool result at message #133 is 2,184 tokens (6.8% of the whole session).","wastedTokens":1529,"fix":"Truncate, filter fields, or summarize the tool output before it enters context (e.g. return only the fields the model needs)."}],"wasted":4806,"blocks":[{"msg":0,"role":"user","kind":"user_text","label":"user text","tokens":50},{"msg":1,"role":"user","kind":"user_text","label":"user text","tokens":29},{"msg":2,"role":"user","kind":"user_text","label":"user text","tokens":38},{"msg":3,"role":"user","kind":"user_text","label":"user text","tokens":215},{"msg":5,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":17},{"msg":6,"role":"assistant","kind":"tool_use","label":"tool_use: Read","tokens":16},{"msg":7,"role":"user","kind":"tool_result","label":"tool_result: toolu_011oN94ycaikSaERKpbpRNMy","tokens":4681},{"msg":8,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":55},{"msg":9,"role":"user","kind":"tool_result","label":"tool_result: toolu_01VqU1VqE1ZcyPdrmChc3ZfN","tokens":99},{"msg":11,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":26},{"msg":12,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":74},{"msg":13,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":78},{"msg":14,"role":"user","kind":"tool_result","label":"tool_result: toolu_01KRgT116DVUrjgQdPWRHys2","tokens":986},{"msg":15,"role":"user","kind":"tool_result","label":"tool_result: toolu_012HKCo4FcV5Etk3YcpTkgfT","tokens":418},{"msg":17,"role":"user","kind":"tool_result","label":"tool_result: toolu_016CDoxwkUTMCF636gR66wC1","tokens":71},{"msg":18,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":120},{"msg":19,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":59},{"msg":20,"role":"assistant","kind":"tool_use","label":"tool_use: Read","tokens":15},{"msg":21,"role":"assistant","kind":"tool_use","label":"tool_use: Read","tokens":15},{"msg":22,"role":"user","kind":"tool_result","label":"tool_result: toolu_01CEBn8Fuc7gEWB9bZ9fS2Ud","tokens":49},{"msg":23,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Th7XpGzWiQuFVqLBNXagzh","tokens":113},{"msg":25,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":15},{"msg":26,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":72},{"msg":27,"role":"user","kind":"tool_result","label":"tool_result: toolu_015hNqdbXBpyUoSvp4jwhENB","tokens":58},{"msg":29,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":27},{"msg":30,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":48},{"msg":31,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":91},{"msg":32,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":319},{"msg":33,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":194},{"msg":34,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":23},{"msg":35,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":23},{"msg":36,"role":"user","kind":"tool_result","label":"tool_result: toolu_018SCUMz2AQDjSr9n2wKoaiD","tokens":31},{"msg":37,"role":"user","kind":"tool_result","label":"tool_result: toolu_01LHHhTgXrw4vUqqR4vgBEAm","tokens":31},{"msg":38,"role":"user","kind":"tool_result","label":"tool_result: toolu_01YQMB4y5ZhNKd5atoUC5CEd","tokens":31},{"msg":39,"role":"user","kind":"tool_result","label":"tool_result: toolu_01RtqJtGr1FoyoYTdWkAYJ8w","tokens":31},{"msg":40,"role":"user","kind":"tool_result","label":"tool_result: toolu_01WqT4wLMBC2Z7XTejmVkTqF","tokens":35},{"msg":41,"role":"user","kind":"tool_result","label":"tool_result: toolu_0145yyZ3xpZpJNaTpDz1kNEb","tokens":35},{"msg":43,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":24},{"msg":44,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":46},{"msg":45,"role":"user","kind":"tool_result","label":"tool_result: toolu_01MSkGan6GJqSWxkTfxvu4ra","tokens":33},{"msg":46,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":10},{"msg":47,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":72},{"msg":48,"role":"user","kind":"tool_result","label":"tool_result: toolu_01CRtL5oJemxQ9w7LAVEcjwh","tokens":828},{"msg":50,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":748},{"msg":51,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":52,"role":"system","kind":"system","label":"system prompt","tokens":62},{"msg":53,"role":"user","kind":"user_text","label":"user text","tokens":7},{"msg":55,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":42},{"msg":56,"role":"user","kind":"tool_result","label":"tool_result: toolu_01NuG9M9TT4KC4r3GU67AmoF","tokens":22},{"msg":58,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":59},{"msg":59,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":74},{"msg":60,"role":"user","kind":"tool_result","label":"tool_result: toolu_01MT9vWLzw74UWYhZYZrRTeK","tokens":20},{"msg":62,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":72},{"msg":63,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":34},{"msg":64,"role":"user","kind":"tool_result","label":"tool_result: toolu_01QR5nTHgMwKvfUu1pjCUwzv","tokens":97},{"msg":65,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":97},{"msg":66,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":67,"role":"user","kind":"user_text","label":"user text","tokens":4},{"msg":68,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":78},{"msg":69,"role":"user","kind":"tool_result","label":"tool_result: toolu_01SCYYsrQR42mNESqqcNG77w","tokens":901},{"msg":71,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":36},{"msg":72,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":51},{"msg":73,"role":"user","kind":"tool_result","label":"tool_result: toolu_0197XS1bpRATGFMPMwZ5jwUi","tokens":12},{"msg":75,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":74},{"msg":76,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":77,"role":"system","kind":"system","label":"system prompt","tokens":5},{"msg":78,"role":"user","kind":"user_text","label":"user text","tokens":3},{"msg":79,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":126},{"msg":80,"role":"user","kind":"tool_result","label":"tool_result: toolu_01EQWmgUsjE81J9aLGBtDLYq","tokens":579},{"msg":82,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":109},{"msg":83,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":84,"role":"user","kind":"user_text","label":"user text","tokens":146},{"msg":85,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":41},{"msg":86,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":97},{"msg":87,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Nyt32UNx4tHRbQtVaWykbq","tokens":27},{"msg":88,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":217},{"msg":89,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":90,"role":"user","kind":"user_text","label":"user text","tokens":67},{"msg":92,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":35},{"msg":93,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":68},{"msg":94,"role":"user","kind":"tool_result","label":"tool_result: toolu_01GWEdwedyHhA16pDJsGTZeM","tokens":25},{"msg":95,"role":"user","kind":"tool_result","label":"tool_result: toolu_01NYbzvJ5tFMZK7TUVJdmkHG","tokens":33},{"msg":97,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":44},{"msg":98,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":31},{"msg":99,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Qm4s4AGxDUfQDdNJKhMHjZ","tokens":366},{"msg":101,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":18},{"msg":102,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":69},{"msg":103,"role":"user","kind":"tool_result","label":"tool_result: toolu_01D6tVjW8osF8yXSaKpKepnS","tokens":17},{"msg":105,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":60},{"msg":106,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":912},{"msg":107,"role":"user","kind":"tool_result","label":"tool_result: toolu_01YazmMX4B3YanRY8hFfyXZL","tokens":30},{"msg":108,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":631},{"msg":109,"role":"user","kind":"tool_result","label":"tool_result: toolu_012W4fJBYB473NSVJmjxTkQg","tokens":31},{"msg":110,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":173},{"msg":111,"role":"user","kind":"tool_result","label":"tool_result: toolu_01XWvo9xGeaSrHS7p6mZFLcx","tokens":31},{"msg":112,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":9},{"msg":113,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":800},{"msg":114,"role":"user","kind":"tool_result","label":"tool_result: toolu_01KVWt5PE9TxsdNuSk43BtHu","tokens":33},{"msg":115,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":245},{"msg":116,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Tpki1C7bRcWw1xS8KJwdkb","tokens":33},{"msg":117,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":214},{"msg":118,"role":"user","kind":"tool_result","label":"tool_result: toolu_015UgaukKgopKU7kiMeqRKuo","tokens":33},{"msg":119,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":109},{"msg":120,"role":"user","kind":"tool_result","label":"tool_result: toolu_01AxcNoFm1dzMiWWNPpeKfWJ","tokens":33},{"msg":121,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":17},{"msg":122,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":210},{"msg":123,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Uj7mZFYVWbk1RfTb7i9oXG","tokens":33},{"msg":125,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":28},{"msg":126,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":491},{"msg":127,"role":"user","kind":"tool_result","label":"tool_result: toolu_01RUiZYo5ZfDw2yj2MGCzQvK","tokens":25},{"msg":129,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":19},{"msg":130,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":486},{"msg":131,"role":"user","kind":"tool_result","label":"tool_result: toolu_01JHjRK32SkWLrUBpWzMaM4b","tokens":34},{"msg":132,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":32},{"msg":133,"role":"user","kind":"tool_result","label":"tool_result: toolu_01BfGJ7M1oDq2qbt7RBhFULs","tokens":2184},{"msg":135,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":38},{"msg":136,"role":"assistant","kind":"tool_use","label":"tool_use: Read","tokens":14},{"msg":137,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Ru6YuZ5GokEGjU4CMN6s8j","tokens":113},{"msg":139,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":133},{"msg":140,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":55},{"msg":141,"role":"user","kind":"tool_result","label":"tool_result: toolu_01TqVNFhfVQTpkeqN9Qhxj1U","tokens":32},{"msg":142,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":32},{"msg":143,"role":"user","kind":"tool_result","label":"tool_result: toolu_01GrZQ5F2aGLLiqATAMEiycD","tokens":105},{"msg":145,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":21},{"msg":146,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":74},{"msg":147,"role":"user","kind":"tool_result","label":"tool_result: toolu_01GLZb5SAiU1DYv6iwwcxwts","tokens":37},{"msg":149,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":645},{"msg":150,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":151,"role":"user","kind":"user_text","label":"user text","tokens":47},{"msg":153,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":17},{"msg":154,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":75},{"msg":155,"role":"assistant","kind":"tool_use","label":"tool_use: Read","tokens":18},{"msg":156,"role":"user","kind":"tool_result","label":"tool_result: toolu_011st7wVorFC4GKhUwCwHm6T","tokens":234},{"msg":157,"role":"user","kind":"tool_result","label":"tool_result: toolu_012KkRNVYp1biTrMMbV8rPsU","tokens":1519},{"msg":159,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":40},{"msg":160,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":61},{"msg":161,"role":"user","kind":"tool_result","label":"tool_result: toolu_01UuajL2Eo8JfZkkddzLXzRd","tokens":38},{"msg":163,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":27},{"msg":164,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":43},{"msg":165,"role":"user","kind":"tool_result","label":"tool_result: toolu_01CMZgJoRmopigmtVbrNqE6j","tokens":33},{"msg":166,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":60},{"msg":167,"role":"user","kind":"tool_result","label":"tool_result: toolu_01CAR8KZSN7yMTapNSVfxARQ","tokens":61},{"msg":168,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":36},{"msg":169,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":1292},{"msg":170,"role":"user","kind":"tool_result","label":"tool_result: toolu_01X1k1fwQbNtEpMY7UsqRppc","tokens":33},{"msg":171,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":27},{"msg":172,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":617},{"msg":173,"role":"user","kind":"tool_result","label":"tool_result: toolu_01JhfEeWN2xPy8j5uDW4kRVm","tokens":33},{"msg":174,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":229},{"msg":175,"role":"user","kind":"tool_result","label":"tool_result: toolu_01LX8bg1DEhtTXDvFWG3xRSR","tokens":33},{"msg":176,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":300},{"msg":177,"role":"user","kind":"tool_result","label":"tool_result: toolu_01SvhCedq1P9NSZQHDk8NCNS","tokens":35},{"msg":179,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":29},{"msg":180,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":521},{"msg":181,"role":"user","kind":"tool_result","label":"tool_result: toolu_01TANqG5yFj8d2qLiuxjvpeq","tokens":34},{"msg":182,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":36},{"msg":183,"role":"user","kind":"tool_result","label":"tool_result: toolu_014S6sMsVpaEKqvPQQ5Rp4Mn","tokens":83},{"msg":185,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":79},{"msg":186,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":162},{"msg":187,"role":"user","kind":"tool_result","label":"tool_result: toolu_01Smtvfv37G52YgDFBKFiprw","tokens":22},{"msg":189,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":30},{"msg":190,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":34},{"msg":191,"role":"user","kind":"tool_result","label":"tool_result: toolu_011rBRMhGB1xsPA3e8oWTwvX","tokens":27},{"msg":192,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":540},{"msg":193,"role":"system","kind":"system","label":"system prompt","tokens":1},{"msg":194,"role":"user","kind":"user_text","label":"user text","tokens":45},{"msg":195,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":6},{"msg":196,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":74},{"msg":197,"role":"user","kind":"tool_result","label":"tool_result: toolu_014SZ2h2VqbjmvhaMF7WVoWQ","tokens":172},{"msg":199,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":44},{"msg":200,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":105},{"msg":201,"role":"user","kind":"tool_result","label":"tool_result: toolu_01299UiycqWFk3EYBR8MJgSZ","tokens":34},{"msg":202,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":816},{"msg":203,"role":"user","kind":"tool_result","label":"tool_result: toolu_01DFyZKiGhGupCuQh6LKnSqz","tokens":33},{"msg":204,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":20},{"msg":205,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":77},{"msg":206,"role":"user","kind":"tool_result","label":"tool_result: toolu_01GJs44MJkAekaJE6W623NnQ","tokens":33},{"msg":207,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":200},{"msg":208,"role":"user","kind":"tool_result","label":"tool_result: toolu_01NCodWg21Se3z2EuzUdEzG3","tokens":33},{"msg":209,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":280},{"msg":210,"role":"user","kind":"tool_result","label":"tool_result: toolu_01TGgAHjvsRY7v3bZBf8qXK3","tokens":33},{"msg":211,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":523},{"msg":212,"role":"user","kind":"tool_result","label":"tool_result: toolu_012CLQ3V2ziLQBCfQF7ywNe6","tokens":35},{"msg":214,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":39},{"msg":215,"role":"assistant","kind":"tool_use","label":"tool_use: Write","tokens":449},{"msg":216,"role":"user","kind":"tool_result","label":"tool_result: toolu_01VnMpsrQZczqtySK3UmYvQW","tokens":34},{"msg":217,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":47},{"msg":218,"role":"user","kind":"tool_result","label":"tool_result: toolu_01GPsE8pbAZV7hQnc3Y36kWK","tokens":201},{"msg":220,"role":"assistant","kind":"assistant_text","label":"assistant text","tokens":55},{"msg":221,"role":"assistant","kind":"tool_use","label":"tool_use: Edit","tokens":42},{"msg":222,"role":"user","kind":"tool_result","label":"tool_result: toolu_01PkDFnEw7FQTauqfBRabkhh","tokens":33},{"msg":223,"role":"assistant","kind":"tool_use","label":"tool_use: Bash","tokens":64},{"msg":224,"role":"user","kind":"tool_result","label":"tool_result: toolu_01M5WL5ra3vAtt2PC1Yeg4fV","tokens":53},{"msg":225,"role":"user","kind":"user_text","label":"user text","tokens":9}]};
+const KIND_COLOR = { system: "#8fa8c9", user_text: "#7fc9b4", assistant_text: "#c9c07f", tool_use: "#c99a7f", tool_result: "#d4713f", attachment: "#b07fc9", other: "#8a949e" };
+const KIND_NAME = { system: "system", user_text: "user", assistant_text: "assistant", tool_use: "tool calls", tool_result: "tool results", attachment: "attachments", other: "other" };
+
+document.getElementById("src").textContent = DATA.adapter + " · " + DATA.source;
+document.getElementById("total").textContent = DATA.total.toLocaleString();
+document.getElementById("msgs").textContent = DATA.messages;
+document.getElementById("wasted").textContent = "~" + DATA.wasted.toLocaleString();
+
+// Squarified treemap (Bruls et al.) — dependency-free.
+function squarify(items, x, y, w, h, out) {
+  if (!items.length) return;
+  const total = items.reduce((s, i) => s + i.tokens, 0);
+  let row = [], rest = items.slice();
+  const shortest = () => Math.min(w, h);
+  function worst(row, len) {
+    const s = row.reduce((a, b) => a + b._area, 0);
+    const max = Math.max(...row.map(r => r._area)), min = Math.min(...row.map(r => r._area));
+    return Math.max((len * len * max) / (s * s), (s * s) / (len * len * min));
+  }
+  const area = w * h;
+  rest.forEach(i => (i._area = (i.tokens / total) * area));
+  while (rest.length) {
+    const next = rest[0];
+    if (!row.length || worst(row.concat(next), shortest()) <= worst(row, shortest())) {
+      row.push(rest.shift());
+    } else {
+      layoutRow(row); row = [];
+    }
+  }
+  if (row.length) layoutRow(row);
+  function layoutRow(row) {
+    const s = row.reduce((a, b) => a + b._area, 0);
+    if (w >= h) {
+      const cw = s / h; let cy = y;
+      for (const r of row) { const ch = r._area / cw; out.push({ ...r, x, y: cy, w: cw, h: ch }); cy += ch; }
+      x += cw; w -= cw;
+    } else {
+      const ch = s / w; let cx = x;
+      for (const r of row) { const cw2 = r._area / ch; out.push({ ...r, x: cx, y, w: cw2, h: ch }); cx += cw2; }
+      y += ch; h -= ch;
+    }
+  }
+}
+
+const el = document.getElementById("treemap");
+function render() {
+  el.innerHTML = "";
+  const W = el.clientWidth, H = el.clientHeight;
+  const items = DATA.blocks.slice().sort((a, b) => b.tokens - a.tokens);
+  const cells = [];
+  squarify(items, 0, 0, W, H, cells);
+  for (const cel of cells) {
+    const d = document.createElement("div");
+    d.className = "cell";
+    d.style.cssText = `left:${cel.x}px;top:${cel.y}px;width:${cel.w}px;height:${cel.h}px;background:${KIND_COLOR[cel.kind] || "#888"}`;
+    d.title = `#${cel.msg} ${cel.label} — ${cel.tokens.toLocaleString()} tokens`;
+    if (cel.w > 70 && cel.h > 30) d.innerHTML = `<b>${cel.label}</b>${cel.tokens.toLocaleString()} tok`;
+    el.appendChild(d);
+  }
+}
+render();
+addEventListener("resize", render);
+
+const legend = document.getElementById("legend");
+for (const row of DATA.breakdown) {
+  const s = document.createElement("span");
+  s.innerHTML = `<i style="background:${KIND_COLOR[row.kind] || "#888"}"></i>${KIND_NAME[row.kind] || row.kind} ${row.pct.toFixed(1)}%`;
+  legend.appendChild(s);
+}
+
+const fEl = document.getElementById("findings");
+if (!DATA.findings.length) {
+  fEl.innerHTML = '<p class="clean">✓ No waste detected. Clean session.</p>';
+} else {
+  for (const f of DATA.findings) {
+    const d = document.createElement("div");
+    d.className = "finding";
+    d.innerHTML = `<span class="waste">~${f.wastedTokens.toLocaleString()} tok</span><span class="code">${f.code}</span><b>${f.title}</b><p>${f.detail}</p><p class="fix">fix: ${f.fix}</p>`;
+    fEl.appendChild(d);
+  }
+}
+</script>
+</body>
+</html>

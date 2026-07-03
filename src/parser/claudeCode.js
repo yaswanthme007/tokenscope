@@ -61,13 +61,14 @@ export function parseClaudeCodeJsonl(path) {
     if (role === "system" || typeof content === "string") {
       blocks.push(
         role === "system"
-          ? { kind: "system", label: "system prompt", text: typeof content === "string" ? content : JSON.stringify(content) }
+          ? { kind: "system", label: "system prompt", text: typeof content === "string" ? content : JSON.stringify(content ?? "") }
           : blockFromContent(content, role)
       );
     } else if (Array.isArray(content)) {
       for (const part of content) blocks.push(blockFromContent(part, role));
     }
 
+    for (const b of blocks) if (typeof b.text !== "string") b.text = b.text == null ? "" : String(b.text);
     if (blocks.length > 0) messages.push({ index: index++, role, blocks });
   }
 

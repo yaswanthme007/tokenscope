@@ -44,7 +44,7 @@ export function detectRepetition(session, { chunkLines = 20, minChunkTokens = 50
   const seen = new Map(); // hash -> { count, tokens, label, preview, messages:Set }
   for (const msg of session.messages) {
     for (const b of msg.blocks) {
-      const lines = b.text.split("\n");
+      const lines = (b.text || "").split("\n");
       for (let i = 0; i < lines.length; i += chunkLines) {
         const chunk = lines.slice(i, i + chunkLines).join("\n");
         const tokens = Math.ceil(chunk.length / 4); // cheap estimate is fine for gating
