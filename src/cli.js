@@ -125,7 +125,7 @@ const analysis = analyze(session);
 const costInfo = estimateCost(session, modelKey);
 const wastedCost = wastedCostFor(analysis.wastedTokens, costInfo);
 
-printTerminalReport(session, analysis, { ...costInfo, wastedCost });
+printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut });
 
 if (htmlOut) {
   writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost });

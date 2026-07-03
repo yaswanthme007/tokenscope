@@ -54,8 +54,10 @@ export function writeHtmlReport(session, analysis, outPath, cost) {
   .stat .model-note { color: var(--muted); font-size: 11px; display: block; }
   h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin: 36px 0 12px; }
   #treemap { width: 100%; height: 380px; position: relative; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
-  .cell { position: absolute; overflow: hidden; padding: 6px 8px; font-size: 11px; line-height: 1.35; border: 1px solid rgba(0,0,0,.35); color: #0e1215; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  .cell { position: absolute; overflow: hidden; padding: 6px 8px; font-size: 11px; line-height: 1.35; border: 1px solid rgba(0,0,0,.35); color: #0e1215; animation: fadeIn 200ms ease-out both; }
   .cell b { display: block; font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .cell { animation: none; } }
   .legend { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
   .finding { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--heat3); border-radius: 0; padding: 14px 16px; margin-bottom: 12px; }
@@ -154,14 +156,14 @@ function render() {
   const items = DATA.blocks.slice().sort((a, b) => b.tokens - a.tokens);
   const cells = [];
   squarify(items, 0, 0, W, H, cells);
-  for (const cel of cells) {
+  cells.forEach((cel, idx) => {
     const d = document.createElement("div");
     d.className = "cell";
-    d.style.cssText = \`left:\${cel.x}px;top:\${cel.y}px;width:\${cel.w}px;height:\${cel.h}px;background:\${KIND_COLOR[cel.kind] || "#888"}\`;
+    d.style.cssText = \`left:\${cel.x}px;top:\${cel.y}px;width:\${cel.w}px;height:\${cel.h}px;background:\${KIND_COLOR[cel.kind] || "#888"};animation-delay:\${idx * 10}ms\`;
     d.title = \`#\${cel.msg} \${cel.label} — \${cel.tokens.toLocaleString()} tokens\`;
     if (cel.w > 70 && cel.h > 30) d.innerHTML = \`<b>\${cel.label}</b>\${cel.tokens.toLocaleString()} tok\`;
     el.appendChild(d);
-  }
+  });
 }
 render();
 addEventListener("resize", render);
