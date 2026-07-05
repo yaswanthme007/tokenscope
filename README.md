@@ -4,6 +4,8 @@
 
 **Chrome DevTools for your context window.** See exactly where your AI tokens go — and stop wasting them.
 
+![tokenscope treemap report](docs/treemap.png)
+
 <!-- TODO: demo GIF goes here. This is the single most important asset in the repo. -->
 
 Your agent session just burned 500K tokens. Where did they go? tokenscope profiles your session logs and tells you: which files got re-sent six times, which tool result dumped 20K tokens of JSON the model never used, and what it's costing you.
@@ -12,25 +14,7 @@ Your agent session just burned 500K tokens. Where did they go? tokenscope profil
 npx tokenscope-ai ~/.claude/projects/my-project
 ```
 
-```
-Total context consumed: 33,821 tokens across 8 messages
-
-Where it went
-  Tool results       ███████████████████░░░░░░░░░  66.6%  22,518 tok
-  User messages      █████████░░░░░░░░░░░░░░░░░░░  33.2%  11,214 tok
-  Assistant output   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░   0.2%      84 tok
-
-Findings
-  W001 Repeated content         ~7,142 tokens wasted
-       Identical content re-sent 3x across messages 0, 4, 6
-       fix: Send it once, or enable prompt caching.
-
-  W002 Bloated tool result      ~15,763 tokens wasted
-       A single tool result is 22,518 tokens (66.6% of the session)
-       fix: Truncate or filter the tool output before it enters context.
-
-  Estimated waste: ~22,905 tokens (67.7% of session)
-```
+![tokenscope terminal output](docs/terminal.png)
 
 ## Why
 
