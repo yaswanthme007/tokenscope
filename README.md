@@ -35,6 +35,7 @@ npm install -g tokenscope-ai            # or install globally
 tokenscope-ai ~/.claude/projects/my-project        # newest session in a directory
 tokenscope-ai session.jsonl                        # a specific session file
 tokenscope-ai session.jsonl --html report.html    # + shareable HTML treemap report
+tokenscope-ai session.jsonl --plan pro             # budget usage instead of dollar cost (Pro/Max subscribers)
 ```
 
 The HTML report is a single self-contained file — open it in any browser, share it with your team, attach it to a PR.

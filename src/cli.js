@@ -8,6 +8,7 @@ import { parseClaudeCodeJsonl } from "./parser/claudeCode.js";
 import { annotateTokens, computeExactUsage } from "./tokenizer.js";
 import { analyze } from "./analyzers/index.js";
 import { estimateCost, wastedCostFor, MODELS } from "./cost.js";
+import { PLANS } from "./plan.js";
 import { printTerminalReport } from "./report/terminal.js";
 import { writeHtmlReport } from "./report/html.js";
 
@@ -32,8 +33,19 @@ if (modelIdx !== -1 && !MODELS[modelKey]) {
   process.exit(1);
 }
 
+const planIdx = args.indexOf("--plan");
+const rawPlan = args[planIdx + 1];
+const planKey = planIdx !== -1
+  ? ((rawPlan && !rawPlan.startsWith("--")) ? rawPlan : "pro")
+  : "api";
+
+if (planIdx !== -1 && !PLANS[planKey]) {
+  console.error(`Unknown plan "${planKey}". Valid options: ${Object.keys(PLANS).join(", ")}`);
+  process.exit(1);
+}
+
 // Positional args: skip flags and their values
-const FLAGS_WITH_VALUES = new Set(["--html", "--model"]);
+const FLAGS_WITH_VALUES = new Set(["--html", "--model", "--plan"]);
 const positional = [];
 let i = 0;
 while (i < args.length) {
@@ -56,11 +68,18 @@ usage:
   tokenscope-ai session.jsonl                profile a specific file
   tokenscope-ai session.jsonl --html r.html  generate visual HTML report
   tokenscope-ai --model opus                 use Opus pricing ($15/$75 per M tokens)
+  tokenscope-ai --plan pro                   show budget usage instead of dollar cost
 
 models (--model):
   sonnet   $${m.sonnet.inputPer1M.toFixed(2)} / $${m.sonnet.outputPer1M.toFixed(2)} per M tokens  (default)
   opus     $${m.opus.inputPer1M.toFixed(2)} / $${m.opus.outputPer1M.toFixed(2)} per M tokens
   haiku    $${m.haiku.inputPer1M.toFixed(2)} / $${m.haiku.outputPer1M.toFixed(2)} per M tokens
+
+plans (--plan):
+  api      pay-as-you-go dollar cost  (default)
+  pro      $${PLANS.pro.pricePerMonth}/mo  ~${PLANS.pro.opusMsgsPerDay} Opus or ~${PLANS.pro.sonnetMsgsPerDay} Sonnet messages/day
+  max5x    $${PLANS.max5x.pricePerMonth}/mo  ~${PLANS.max5x.opusMsgsPerDay} Opus or ~${PLANS.max5x.sonnetMsgsPerDay} Sonnet messages/day
+  max20x   $${PLANS.max20x.pricePerMonth}/mo  ~${PLANS.max20x.opusMsgsPerDay} Opus or ~${PLANS.max20x.sonnetMsgsPerDay} Sonnet messages/day
 
 100% local. No API key. Nothing leaves your machine.
 `);
@@ -126,9 +145,9 @@ const analysis = analyze(session, exactUsage);
 const costInfo = estimateCost(session, modelKey, exactUsage);
 const wastedCost = wastedCostFor(analysis.wastedTokens, costInfo);
 
-printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut, exactUsage });
+printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut, exactUsage, planKey, modelKey });
 
 if (htmlOut) {
-  writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost }, exactUsage);
+  writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost }, exactUsage, { planKey, modelKey });
   console.log(`HTML report written to ${htmlOut}\n`);
 }

@@ -1,5 +1,7 @@
 // Terminal report: totals, category bars, findings, cost. Plain ANSI, CI-safe.
 
+import { estimateBudgetUsage } from "../plan.js";
+
 const c = {
   reset: "\x1b[0m", bold: "\x1b[1m", dim: "\x1b[2m",
   red: "\x1b[31m", yellow: "\x1b[33m", green: "\x1b[32m",
@@ -18,9 +20,10 @@ function fmtCost(n) {
 
 export function printTerminalReport(session, analysis, cost, opts = {}) {
   const { breakdown, findings, wastedTokens } = analysis;
-  const { exactUsage } = opts;
+  const { exactUsage, planKey = "api", modelKey } = opts;
   const total = exactUsage ? exactUsage.totalTokens : session.totalTokens;
   const totalLabel = exactUsage ? "exact (from API usage data)" : "estimated";
+  const budget = planKey !== "api" ? estimateBudgetUsage(total, wastedTokens, planKey, modelKey) : null;
 
   console.log(`\n${c.bold}token${c.yellow}scope${c.reset} ${c.dim}· ${session.adapter} · ${session.source}${c.reset}\n`);
   console.log(`${c.bold}Total context consumed:${c.reset} ${total.toLocaleString()} tokens across ${session.messages.length} messages ${c.dim}(${totalLabel})${c.reset}\n`);
@@ -31,7 +34,14 @@ export function printTerminalReport(session, analysis, cost, opts = {}) {
     console.log(`  ${row.label.padEnd(18)} ${c.yellow}${bar(row.pct)}${c.reset} ${pct}%  ${c.dim}${row.tokens.toLocaleString()} tok${c.reset}`);
   }
 
-  if (cost) {
+  if (budget) {
+    console.log(`\n${c.bold}Budget${c.reset}  ${c.dim}(${budget.planLabel} · rough daily allocation ~${budget.budgetTokens.toLocaleString()} tokens)${c.reset}`);
+    console.log(`  Session usage:    ~${budget.usedPct.toFixed(1)}% of your daily budget`);
+    console.log(`  Wasted capacity:  ~${budget.wastedPct.toFixed(1)}% of your daily budget`);
+    if (cost && cost.cache) {
+      console.log(`  Cache: ${cost.cache.pct.toFixed(1)}% of input tokens served from cache${cost.exact ? "" : " (estimated)"}`);
+    }
+  } else if (cost) {
     const costLabel = cost.exact ? "exact, from API usage data" : "estimates";
     console.log(`\n${c.bold}Cost${c.reset}  ${c.dim}(${cost.label} · $${cost.inputPer1M.toFixed(2)}/$${cost.outputPer1M.toFixed(2)} per M tokens — ${costLabel})${c.reset}`);
     console.log(`  Session cost:     ~${fmtCost(cost.sessionCost)}`);
@@ -56,5 +66,6 @@ export function printTerminalReport(session, analysis, cost, opts = {}) {
 
   if (!opts.htmlOut) console.log(`\n${c.dim}→ add --html report.html for the visual treemap${c.reset}`);
   if (findings.length > 0) console.log(`${c.dim}→ fix these and run again to compare${c.reset}`);
+  if (planKey === "api") console.log(`${c.dim}→ on a Pro/Max subscription? try --plan pro for budget-based reporting${c.reset}`);
   console.log();
 }
