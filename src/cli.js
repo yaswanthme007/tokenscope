@@ -9,6 +9,7 @@ import { annotateTokens, computeExactUsage } from "./tokenizer.js";
 import { analyze } from "./analyzers/index.js";
 import { estimateCost, wastedCostFor, MODELS } from "./cost.js";
 import { PLANS } from "./plan.js";
+import { loadSavedPlan, resetSavedPlan, promptAndSavePlan } from "./planConfig.js";
 import { printTerminalReport } from "./report/terminal.js";
 import { writeHtmlReport } from "./report/html.js";
 
@@ -33,13 +34,19 @@ if (modelIdx !== -1 && !MODELS[modelKey]) {
   process.exit(1);
 }
 
+const resetPlanFlag = args.includes("--reset-plan");
+if (resetPlanFlag) resetSavedPlan();
+
+const savedPlanKey = loadSavedPlan(); // null if never set (or just reset above)
+
 const planIdx = args.indexOf("--plan");
 const rawPlan = args[planIdx + 1];
-const planKey = planIdx !== -1
+const planExplicit = planIdx !== -1;
+const planKey = planExplicit
   ? ((rawPlan && !rawPlan.startsWith("--")) ? rawPlan : "pro")
-  : "api";
+  : (savedPlanKey ?? "api");
 
-if (planIdx !== -1 && !PLANS[planKey]) {
+if (planExplicit && !PLANS[planKey]) {
   console.error(`Unknown plan "${planKey}". Valid options: ${Object.keys(PLANS).join(", ")}`);
   process.exit(1);
 }
@@ -69,6 +76,7 @@ usage:
   tokenscope-ai session.jsonl --html r.html  generate visual HTML report
   tokenscope-ai --model opus                 use Opus pricing ($15/$75 per M tokens)
   tokenscope-ai --plan pro                   show budget usage instead of dollar cost
+  tokenscope-ai --reset-plan                 forget saved plan and ask again next run
 
 models (--model):
   sonnet   $${m.sonnet.inputPer1M.toFixed(2)} / $${m.sonnet.outputPer1M.toFixed(2)} per M tokens  (default)
@@ -80,6 +88,9 @@ plans (--plan):
   pro      $${PLANS.pro.pricePerMonth}/mo  ~${PLANS.pro.opusMsgsPerDay} Opus or ~${PLANS.pro.sonnetMsgsPerDay} Sonnet messages/day
   max5x    $${PLANS.max5x.pricePerMonth}/mo  ~${PLANS.max5x.opusMsgsPerDay} Opus or ~${PLANS.max5x.sonnetMsgsPerDay} Sonnet messages/day
   max20x   $${PLANS.max20x.pricePerMonth}/mo  ~${PLANS.max20x.opusMsgsPerDay} Opus or ~${PLANS.max20x.sonnetMsgsPerDay} Sonnet messages/day
+
+On first run (no --plan, no saved preference, interactive terminal), tokenscope asks
+which plan you're on and remembers it in ~/.tokenscope/config.json.
 
 100% local. No API key. Nothing leaves your machine.
 `);
@@ -150,4 +161,10 @@ printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut, e
 if (htmlOut) {
   writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost }, exactUsage, { planKey, modelKey });
   console.log(`HTML report written to ${htmlOut}\n`);
+}
+
+// First run: no --plan given, nothing saved yet, and there's an actual human to ask.
+// Piped/CI stdin isn't a TTY, so this is skipped there and we silently keep the API view.
+if (!planExplicit && savedPlanKey == null && process.stdin.isTTY) {
+  await promptAndSavePlan();
 }
