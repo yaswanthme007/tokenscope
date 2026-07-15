@@ -108,9 +108,60 @@ export function detectBloat(session, { threshold = 2000 } = {}) {
   return findings.sort((a, b) => b.wastedTokens - a.wastedTokens);
 }
 
-export function analyze(session) {
+// W003: prompt caching appears unused (or underused), despite a real opportunity to save cost.
+// Cache reads are billed at 10% of input price, so any input that isn't hitting cache is
+// paying 10x more than it needs to.
+const CACHE_READ_MULTIPLIER = 0.10;
+
+export function detectCacheOpportunity(session, exactUsage = null, repetitionFindings = []) {
+  const findings = [];
+
+  if (exactUsage) {
+    const { inputTokens, cacheReadTokens, cacheCreationTokens } = exactUsage;
+    const cacheEligible = inputTokens + cacheReadTokens + cacheCreationTokens;
+    const assistantMessages = session.messages.filter((m) => m.role === "assistant").length;
+    if (cacheEligible < 5000 || assistantMessages < 3) return findings; // not enough volume to matter
+
+    const hitRate = (cacheReadTokens / cacheEligible) * 100;
+    if (hitRate >= 10) return findings; // caching is already working
+
+    const missedTokens = inputTokens + cacheCreationTokens; // paid full/write price instead of a cache read
+    const wastedTokens = Math.round(missedTokens * (1 - CACHE_READ_MULTIPLIER));
+    findings.push({
+      code: "W003",
+      severity: "warn",
+      title: "Cache opportunity",
+      detail: `Only ${hitRate.toFixed(1)}% of input tokens (${cacheReadTokens.toLocaleString()} of ${cacheEligible.toLocaleString()}) were served from cache across ${assistantMessages} assistant turns — prompt caching appears unused.`,
+      wastedTokens,
+      fix: "Enable prompt caching (cache_control breakpoints on stable prefixes like the system prompt and tool definitions) so repeated context is billed at 10% of input price instead of full price.",
+    });
+    return findings;
+  }
+
+  // No usage data available: fall back to the repetition heuristic. Repeated content
+  // (W001) is a strong signal caching would help, even though we can't measure the
+  // actual hit rate offline.
+  const totalRepeated = repetitionFindings.reduce((s, f) => s + f.wastedTokens, 0);
+  if (totalRepeated < 500) return findings;
+
+  const wastedTokens = Math.round(totalRepeated * (1 - CACHE_READ_MULTIPLIER));
+  findings.push({
+    code: "W003",
+    severity: "warn",
+    title: "Cache opportunity",
+    detail: `~${totalRepeated.toLocaleString()} tokens of content are repeated across messages (see W001) — a strong candidate for prompt caching, which bills repeats at 10% of input price instead of full price.`,
+    wastedTokens,
+    fix: "Enable prompt caching (cache_control breakpoints on stable prefixes like the system prompt and tool definitions) so repeated context is billed at 10% of input price instead of full price.",
+  });
+  return findings;
+}
+
+export function analyze(session, exactUsage = null) {
   const breakdown = categoryBreakdown(session);
-  const findings = [...detectRepetition(session), ...detectBloat(session)];
+  const repetitionFindings = detectRepetition(session);
+  const bloatFindings = detectBloat(session);
+  const cacheFindings = detectCacheOpportunity(session, exactUsage, repetitionFindings);
+  const findings = [...repetitionFindings, ...bloatFindings, ...cacheFindings];
   const wastedTokens = findings.reduce((s, f) => s + f.wastedTokens, 0);
   return { breakdown, findings, wastedTokens };
 }

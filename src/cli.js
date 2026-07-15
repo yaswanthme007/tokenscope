@@ -121,8 +121,8 @@ if (session.messages.length === 0) {
   console.error("Parsed 0 messages — is this a Claude Code session log?");
   process.exit(1);
 }
-const analysis = analyze(session);
 const exactUsage = computeExactUsage(session);
+const analysis = analyze(session, exactUsage);
 const costInfo = estimateCost(session, modelKey, exactUsage);
 const wastedCost = wastedCostFor(analysis.wastedTokens, costInfo);
 

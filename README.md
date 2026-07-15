@@ -56,6 +56,7 @@ Token counts use a local tokenizer (o200k) and are estimates (~±5%) — profili
 |---|---|
 | W001 | Repeated content — the same chunks sent multiple times |
 | W002 | Bloated tool results — oversized outputs dominating the context |
+| W003 | Cache opportunity — low/no prompt cache hit rate (or, without usage data, heavy repeated content) that caching would fix |
 
 More rules (cache-miss analysis, conversation decay, dead-weight system prompt sections) are on the roadmap. Have an idea for a rule? Open an issue.
 
