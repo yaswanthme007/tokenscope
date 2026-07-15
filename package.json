@@ -1,6 +1,6 @@
 {
   "name": "tokenscope-ai",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Chrome DevTools for your context window — see where your AI tokens go",
   "main": "index.js",
   "scripts": {
