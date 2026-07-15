@@ -69,7 +69,11 @@ export function parseClaudeCodeJsonl(path) {
     }
 
     for (const b of blocks) if (typeof b.text !== "string") b.text = b.text == null ? "" : String(b.text);
-    if (blocks.length > 0) messages.push({ index: index++, role, blocks });
+    if (blocks.length > 0) {
+      const message = { index: index++, role, blocks };
+      if (entry.message && entry.message.usage) message.usage = entry.message.usage;
+      messages.push(message);
+    }
   }
 
   return { source: path, adapter: "claude-code", messages };

@@ -31,3 +31,24 @@ export function annotateTokens(session) {
   session.totalTokens = total;
   return session;
 }
+
+// Aggregates real API usage numbers (when the log has them) into exact session totals.
+// Usage is per-message (each API call bills its own input/output/cache tokens), so unlike
+// the estimated block-level counts above, this cannot be broken down per-block — it's used
+// for session totals and cost, not for the treemap.
+export function computeExactUsage(session) {
+  let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreationTokens = 0;
+  let found = false;
+  for (const msg of session.messages) {
+    const u = msg.usage;
+    if (!u) continue;
+    found = true;
+    inputTokens += u.input_tokens ?? 0;
+    outputTokens += u.output_tokens ?? 0;
+    cacheReadTokens += u.cache_read_input_tokens ?? 0;
+    cacheCreationTokens += u.cache_creation_input_tokens ?? 0;
+  }
+  if (!found) return null;
+  const totalTokens = inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens;
+  return { inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens, totalTokens };
+}

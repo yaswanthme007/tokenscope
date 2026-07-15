@@ -4,11 +4,12 @@
 
 import { writeFileSync } from "node:fs";
 
-export function writeHtmlReport(session, analysis, outPath, cost) {
+export function writeHtmlReport(session, analysis, outPath, cost, exactUsage = null) {
   const data = {
     source: session.source,
     adapter: session.adapter,
-    total: session.totalTokens,
+    total: exactUsage ? exactUsage.totalTokens : session.totalTokens,
+    totalLabel: exactUsage ? "exact (from API usage data)" : "estimated",
     messages: session.messages.length,
     breakdown: analysis.breakdown,
     findings: analysis.findings,
@@ -19,6 +20,8 @@ export function writeHtmlReport(session, analysis, outPath, cost) {
       outputPer1M: cost.outputPer1M,
       sessionCost: cost.sessionCost,
       wastedCost: cost.wastedCost,
+      exact: cost.exact,
+      cache: cost.cache,
     } : null,
     blocks: session.messages.flatMap((m) =>
       m.blocks.map((b) => ({ msg: m.index, role: m.role, kind: b.kind, label: b.label, tokens: b.tokens }))
@@ -50,6 +53,7 @@ export function writeHtmlReport(session, analysis, outPath, cost) {
   .stat.waste b { color: var(--heat3); }
   .stat.cost-session b { color: var(--accent); }
   .stat.cost-waste b { color: var(--heat3); }
+  .stat.cache b { color: var(--heat1); }
   .stat small { color: var(--muted); font-size: 12px; text-transform: lowercase; }
   .stat .model-note { color: var(--muted); font-size: 11px; display: block; }
   h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin: 36px 0 12px; }
@@ -76,11 +80,12 @@ export function writeHtmlReport(session, analysis, outPath, cost) {
     <div class="src" id="src"></div>
   </header>
   <div class="stats">
-    <div class="stat"><b id="total"></b><small>total tokens</small></div>
+    <div class="stat"><b id="total"></b><small id="total-label">total tokens</small></div>
     <div class="stat"><b id="msgs"></b><small>messages</small></div>
     <div class="stat waste"><b id="wasted"></b><small>est. tokens wasted</small></div>
-    <div class="stat cost-session" id="stat-cost-session" style="display:none"><b id="session-cost"></b><small>est. session cost</small><span class="model-note" id="model-note"></span></div>
+    <div class="stat cost-session" id="stat-cost-session" style="display:none"><b id="session-cost"></b><small id="session-cost-label">est. session cost</small><span class="model-note" id="model-note"></span></div>
     <div class="stat cost-waste" id="stat-cost-waste" style="display:none"><b id="waste-cost"></b><small>est. waste cost</small></div>
+    <div class="stat cache" id="stat-cache" style="display:none"><b id="cache-pct"></b><small>input tokens from cache</small><span class="model-note" id="cache-savings"></span></div>
   </div>
   <h2>Context treemap — every block, sized by tokens</h2>
   <div id="treemap"></div>
@@ -102,6 +107,7 @@ function fmtCost(n) {
 
 document.getElementById("src").textContent = DATA.adapter + " · " + DATA.source;
 document.getElementById("total").textContent = DATA.total.toLocaleString();
+document.getElementById("total-label").textContent = "total tokens (" + DATA.totalLabel + ")";
 document.getElementById("msgs").textContent = DATA.messages;
 document.getElementById("wasted").textContent = "~" + DATA.wasted.toLocaleString();
 
@@ -109,8 +115,15 @@ if (DATA.cost) {
   document.getElementById("stat-cost-session").style.display = "";
   document.getElementById("stat-cost-waste").style.display = "";
   document.getElementById("session-cost").textContent = "~" + fmtCost(DATA.cost.sessionCost);
+  document.getElementById("session-cost-label").textContent = DATA.cost.exact ? "session cost" : "est. session cost";
   document.getElementById("waste-cost").textContent = "~" + fmtCost(DATA.cost.wastedCost);
-  document.getElementById("model-note").textContent = DATA.cost.label + " · $" + DATA.cost.inputPer1M.toFixed(2) + "/$" + DATA.cost.outputPer1M.toFixed(2) + "/M";
+  document.getElementById("model-note").textContent = DATA.cost.label + " · $" + DATA.cost.inputPer1M.toFixed(2) + "/$" + DATA.cost.outputPer1M.toFixed(2) + "/M" + (DATA.cost.exact ? " · exact" : " · estimated");
+
+  if (DATA.cost.cache) {
+    document.getElementById("stat-cache").style.display = "";
+    document.getElementById("cache-pct").textContent = DATA.cost.cache.pct.toFixed(1) + "%";
+    document.getElementById("cache-savings").textContent = "saved ~" + fmtCost(DATA.cost.cache.savings);
+  }
 }
 
 // Squarified treemap (Bruls et al.) — dependency-free.

@@ -5,7 +5,7 @@ import { statSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { parseClaudeCodeJsonl } from "./parser/claudeCode.js";
-import { annotateTokens } from "./tokenizer.js";
+import { annotateTokens, computeExactUsage } from "./tokenizer.js";
 import { analyze } from "./analyzers/index.js";
 import { estimateCost, wastedCostFor, MODELS } from "./cost.js";
 import { printTerminalReport } from "./report/terminal.js";
@@ -122,12 +122,13 @@ if (session.messages.length === 0) {
   process.exit(1);
 }
 const analysis = analyze(session);
-const costInfo = estimateCost(session, modelKey);
+const exactUsage = computeExactUsage(session);
+const costInfo = estimateCost(session, modelKey, exactUsage);
 const wastedCost = wastedCostFor(analysis.wastedTokens, costInfo);
 
-printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut });
+printTerminalReport(session, analysis, { ...costInfo, wastedCost }, { htmlOut, exactUsage });
 
 if (htmlOut) {
-  writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost });
+  writeHtmlReport(session, analysis, htmlOut, { ...costInfo, wastedCost }, exactUsage);
   console.log(`HTML report written to ${htmlOut}\n`);
 }

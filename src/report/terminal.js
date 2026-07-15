@@ -18,10 +18,12 @@ function fmtCost(n) {
 
 export function printTerminalReport(session, analysis, cost, opts = {}) {
   const { breakdown, findings, wastedTokens } = analysis;
-  const total = session.totalTokens;
+  const { exactUsage } = opts;
+  const total = exactUsage ? exactUsage.totalTokens : session.totalTokens;
+  const totalLabel = exactUsage ? "exact (from API usage data)" : "estimated";
 
   console.log(`\n${c.bold}token${c.yellow}scope${c.reset} ${c.dim}· ${session.adapter} · ${session.source}${c.reset}\n`);
-  console.log(`${c.bold}Total context consumed:${c.reset} ${total.toLocaleString()} tokens across ${session.messages.length} messages\n`);
+  console.log(`${c.bold}Total context consumed:${c.reset} ${total.toLocaleString()} tokens across ${session.messages.length} messages ${c.dim}(${totalLabel})${c.reset}\n`);
 
   console.log(`${c.bold}Where it went${c.reset}`);
   for (const row of breakdown) {
@@ -30,9 +32,13 @@ export function printTerminalReport(session, analysis, cost, opts = {}) {
   }
 
   if (cost) {
-    console.log(`\n${c.bold}Cost${c.reset}  ${c.dim}(${cost.label} · $${cost.inputPer1M.toFixed(2)}/$${cost.outputPer1M.toFixed(2)} per M tokens — estimates)${c.reset}`);
+    const costLabel = cost.exact ? "exact, from API usage data" : "estimates";
+    console.log(`\n${c.bold}Cost${c.reset}  ${c.dim}(${cost.label} · $${cost.inputPer1M.toFixed(2)}/$${cost.outputPer1M.toFixed(2)} per M tokens — ${costLabel})${c.reset}`);
     console.log(`  Session cost:     ~${fmtCost(cost.sessionCost)}`);
     console.log(`  Estimated waste:  ~${fmtCost(cost.wastedCost)}`);
+    if (cost.cache) {
+      console.log(`  Cache: ${cost.cache.pct.toFixed(1)}% of input tokens served from cache (saved ~${fmtCost(cost.cache.savings)})`);
+    }
   }
 
   console.log(`\n${c.bold}Findings${c.reset}`);
